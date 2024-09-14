@@ -14,7 +14,7 @@ FONT_PATH = 'assets2/NotoSansBengali-ExtraBold.ttf'
 FONT = pygame.font.Font(FONT_PATH, 30)
 BOLD_FONT = pygame.font.Font(FONT_PATH, 30)
 FONT.set_script("Deva")
-MILESTONES = [10, 20, 50, 100, 150, 200]
+#MILESTONES = [100, 150, 200]
 
 background_img = pygame.image.load('assets2/BG2.png')
 background_img = pygame.transform.scale(background_img, (SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -47,7 +47,6 @@ score = 0
 high_score = 0
 milestones_reached = set()
 
-
 def render_text_with_outline(text, font, color, outline_color, surface, position):
     outline_surface = font.render(text, True, outline_color)
     outline_rect = outline_surface.get_rect(center=position)
@@ -61,16 +60,14 @@ def render_text_with_outline(text, font, color, outline_color, surface, position
     text_rect = text_surface.get_rect(center=position)
     surface.blit(text_surface, text_rect)
 
-
 def display_score(score, high_score, game_over=False):
     if not game_over:
-        score_text = f"Score: {int(score)}"
+        score_text = f"Crimes: {int(score)}"
         render_text_with_outline(score_text, BOLD_FONT, WHITE, BLACK, screen, (SCREEN_WIDTH // 2, 50))
     else:
-        high_score_text = f"High Score: {int(high_score)}"
+        high_score_text = f"Most Crimes: {int(high_score)}"
         render_text_with_outline(high_score_text, BOLD_FONT, WHITE, BLACK, screen,
                                  (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
-
 
 def create_pipe():
     pipe_height = random.randint(200, 400)
@@ -78,12 +75,10 @@ def create_pipe():
     pipe_bottom = pipe_img.get_rect(midtop=(SCREEN_WIDTH + 50, pipe_height + pipe_gap // 2))
     return pipe_top, pipe_bottom
 
-
 def move_pipes(pipes):
     for pipe in pipes:
         pipe.centerx -= pipe_speed
     return [pipe for pipe in pipes if pipe.right > 0]
-
 
 def check_collision(pipes):
     for pipe in pipes:
@@ -95,7 +90,6 @@ def check_collision(pipes):
         return False
     return True
 
-
 def update_score(pipes):
     global score
     for pipe in pipes:
@@ -103,17 +97,16 @@ def update_score(pipes):
             score += 1
             score_sound.play()
 
-
 def restart_game():
-    global bird_movement, bird_rect, gravity, milestones_reached, score, pipes
+    global bird_movement, bird_rect, gravity, milestones_reached, score, pipes, game_over_start_time
     bird_rect.center = (50, SCREEN_HEIGHT // 2)
     bird_movement = 0
     gravity = 0.25
     milestones_reached = set()
     score = 0
     pipes = []
+    game_over_start_time = pygame.time.get_ticks()  # Record the start time of game over screen
     return True
-
 
 def draw_multiline_text(text, font, color, surface, position):
     lines = text.split(' ')
@@ -137,8 +130,27 @@ def draw_multiline_text(text, font, color, surface, position):
         surface.blit(text_surface, text_rect)
         y_offset += font.get_height()
 
-
 def celebration_effect():
+    screen.fill(BLACK)
+    text = 'Sorry! You cannot resign... নাহলে দেবাংশু দরজায় শুয়ে পড়বে'
+    draw_multiline_text(text, FONT, WHITE, screen, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+    pygame.display.update()
+    pygame.time.wait(500)
+
+    image = pygame.image.load('assets2/debangshu.png')
+    image_width, image_height = image.get_size()
+    scale_factor = SCREEN_WIDTH / image_width
+    new_height = int(image_height * scale_factor)
+    image = pygame.transform.scale(image, (SCREEN_WIDTH, new_height))
+
+    image_rect = image.get_rect(midtop=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
+    screen.blit(image, image_rect)
+
+    pygame.display.update()
+    pygame.time.wait(2000)
+
+    display_restart_option()
+def celebration_effect2():
     screen.fill(BLACK)
     text = 'Sorry! You cannot resign... নাহলে দেবাংশু দরজায় শুয়ে পড়বে'
     draw_multiline_text(text, FONT, WHITE, screen, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
@@ -156,9 +168,6 @@ def celebration_effect():
 
     pygame.display.update()
     pygame.time.wait(4000)
-
-    display_restart_option()
-
 
 def display_restart_option():
     screen.fill(BLACK)
@@ -184,7 +193,34 @@ def display_restart_option():
                 if event.key == pygame.K_r:
                     waiting_for_restart = False
                     return
+def display_restart_option2():
+    screen.fill(BLACK)
+    restart_text_line1 = 'You have reached the peak'
+    restart_surface_line1 = FONT.render(restart_text_line1, True, WHITE)
+    restart_rect_line1 = restart_surface_line1.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30))
+    screen.blit(restart_surface_line1, restart_rect_line1)
+    restart_text_line2 = 'Say জয় বাংলা'
+    restart_surface_line2 = FONT.render(restart_text_line2, True, WHITE)
+    restart_rect_line2 = restart_surface_line2.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 30))
+    screen.blit(restart_surface_line2, restart_rect_line2)
 
+    restart_text_line3 = 'to Restart the Game'
+    restart_surface_line3 = FONT.render(restart_text_line3, True, WHITE)
+    restart_rect_line3 = restart_surface_line3.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 30))
+    screen.blit(restart_surface_line3, restart_rect_line3)
+
+    pygame.display.update()
+
+    waiting_for_restart = True
+    while waiting_for_restart:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    waiting_for_restart = False
+                    return
 
 def show_developer_screen():
     screen.fill(BLACK)
@@ -192,8 +228,7 @@ def show_developer_screen():
     dev_rect = dev_surface.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
     screen.blit(dev_surface, dev_rect)
     pygame.display.update()
-    pygame.time.wait(000)
-
+    pygame.time.wait(1000)
 
 def main_menu():
     screen.fill(BLACK)
@@ -205,7 +240,6 @@ def main_menu():
     screen.blit(start_surface, start_rect)
     pygame.display.update()
 
-
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
@@ -214,6 +248,8 @@ game_active = False
 start_game = False
 spawn_pipe_event = pygame.USEREVENT
 pygame.time.set_timer(spawn_pipe_event, 1200)
+
+game_over_start_time = 0  # Initialize the game over start time
 
 show_developer_screen()
 
@@ -254,15 +290,30 @@ while True:
                 if pipe.centerx == bird_rect.centerx:
                     score += 1
                     score_sound.play()
-                    if score in MILESTONES and score not in milestones_reached:
-                        milestones_reached.add(score)
-                        celebration_sound.play()
-                        celebration_effect()
+                    # if score in MILESTONES and score not in milestones_reached:
+                    #     milestones_reached.add(score)
+                    #     celebration_sound.play()
+                    #     #celebration_effect()
             display_score(score, high_score)
         else:
-            high_score = max(score, high_score)
-            display_score(score, high_score, game_over=True)
-            main_menu()
+            if pygame.time.get_ticks() - game_over_start_time >= 5000:  # 3 seconds delay
+                high_score = max(score, high_score)
+                #celebration_effect2()
+                #display_restart_option2()
+                display_score(score, high_score, game_over=True)
+                main_menu()
+            else:
+
+
+                celebration_sound.play()
+                celebration_effect()
+                screen.fill(BLACK)
+                text = "Sorry! Your resignation has been declined"
+                draw_multiline_text(text, FONT, WHITE, screen, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+                display_score(score, high_score, game_over=True)
+                pygame.display.update()
+                pygame.time.wait(1000)
+                pygame.display.update()
     else:
         main_menu()
 
